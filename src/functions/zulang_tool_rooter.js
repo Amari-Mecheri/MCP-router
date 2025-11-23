@@ -1,7 +1,7 @@
 import { app } from '@azure/functions';
 
 // Get the base URL from environment variable or construct it
-const BASE_URL = process.env.FUNCTION_BASE_URL;
+const BASE_URL = process.env.FUNCTION_BASE_URL || 'https://your-function-app.azurewebsites.net/api';
 
 app.http('zulang_tool_rooter', {
     methods: ['GET'],
@@ -170,7 +170,7 @@ app.http('zuglang_calculator', {
     }
 });
 
-// Zuglang translation logic
+// Implement your Zuglang translation logic here
 function translateZuglang(expression) {
     // Zuglang is a fictional constructed language
     // Example translations:
@@ -178,7 +178,7 @@ function translateZuglang(expression) {
         "xelgo kravid timzor pluven?": "Hello guys, what's up?",
         "morgat flixu": "Good morning",
         "zynthar polken": "Thank you",
-        "brevix qaltor myx?": "How are you?"
+        "brevix qaltor myx": "How are you?"
     };
     
     // Normalize the input (trim whitespace, lowercase)
@@ -193,7 +193,7 @@ function translateZuglang(expression) {
     return `Translation not found for "${expression}". This Zuglang expression is not in the dictionary yet.`;
 }
 
-// Zuglang calculation logic
+// Implement your Zuglang calculation logic here
 function calculateZuglang(expression1, expression2, operator) {
     // Zuglang numbers use letters A-J to represent 0-9
     // A=0, B=1, C=2, D=3, E=4, F=5, G=6, H=7, I=8, J=9
