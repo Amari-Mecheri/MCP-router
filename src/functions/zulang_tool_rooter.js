@@ -86,7 +86,7 @@ app.http('zuglang_translator', {
                 return {
                     status: 400,
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
+                    body: JSON.stringify({
                         error: 'Missing required parameter: expression',
                         usage: 'Call with ?expression=your_zuglang_text'
                     })
@@ -123,25 +123,24 @@ app.http('zuglang_calculator', {
         try {
             const expression1 = request.query.get('expression1');
             const expression2 = request.query.get('expression2');
-            const operator = request.query.get('operator');
+            let operator = (request.query.get('operator') || '').trim();
 
             if (!expression1 || !expression2 || !operator) {
                 return {
-                    status: 400,
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
+                    status: 400, body: JSON.stringify({
                         error: 'Missing required parameters: expression1, expression2, operator',
                         usage: 'Call with ?expression1=BC&expression2=CF&operator=%2B'
                     })
                 };
             }
 
+            // Fix double-encoded +
+            if (operator === '%2B') operator = '+';
+
             if (!['+', '-', '*', '/'].includes(operator)) {
                 return {
-                    status: 400,
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        error: 'Invalid operator. Must be one of: +, -, *, /' 
+                    status: 400, body: JSON.stringify({
+                        error: 'Invalid operator. Must be one of: +, -, *, /'
                     })
                 };
             }
@@ -175,20 +174,20 @@ function translateZuglang(expression) {
     // Zuglang is a fictional constructed language
     // Example translations:
     const translations = {
-        "xelgo kravid timzor pluven?": "Hello guys, what's up?",
+        "xelgo kravid timzor pluven": "Hello guys, what's up?",
         "morgat flixu": "Good morning",
         "zynthar polken": "Thank you",
         "brevix qaltor myx": "How are you?"
     };
-    
+
     // Normalize the input (trim whitespace, lowercase)
     const normalized = expression.trim().toLowerCase();
-    
+
     // Check if we have a direct translation
     if (translations[normalized]) {
         return translations[normalized];
     }
-    
+
     // Otherwise, return a note that this expression needs to be added
     return `Translation not found for "${expression}". This Zuglang expression is not in the dictionary yet.`;
 }
@@ -197,17 +196,17 @@ function translateZuglang(expression) {
 function calculateZuglang(expression1, expression2, operator) {
     // Zuglang numbers use letters A-J to represent 0-9
     // A=0, B=1, C=2, D=3, E=4, F=5, G=6, H=7, I=8, J=9
-    
+
     // Convert Zuglang number to decimal
     function zuglangToDecimal(zuglangNum) {
         const letterMap = {
             'A': 0, 'B': 1, 'C': 2, 'D': 3, 'E': 4,
             'F': 5, 'G': 6, 'H': 7, 'I': 8, 'J': 9
         };
-        
+
         let result = 0;
         const digits = zuglangNum.toUpperCase().split('');
-        
+
         for (let i = 0; i < digits.length; i++) {
             const digit = letterMap[digits[i]];
             if (digit === undefined) {
@@ -215,32 +214,32 @@ function calculateZuglang(expression1, expression2, operator) {
             }
             result = result * 10 + digit;
         }
-        
+
         return result;
     }
-    
+
     // Convert decimal number to Zuglang
     function decimalToZuglang(decimalNum) {
         const digitMap = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
-        
+
         if (decimalNum === 0) return 'A';
-        
+
         let result = '';
         let num = Math.abs(decimalNum);
-        
+
         while (num > 0) {
             result = digitMap[num % 10] + result;
             num = Math.floor(num / 10);
         }
-        
+
         return decimalNum < 0 ? '-' + result : result;
     }
-    
+
     try {
         // Convert expressions to decimal
         const num1 = zuglangToDecimal(expression1);
         const num2 = zuglangToDecimal(expression2);
-        
+
         // Perform calculation
         let result;
         switch (operator) {
@@ -262,11 +261,11 @@ function calculateZuglang(expression1, expression2, operator) {
             default:
                 return `Error: Invalid operator ${operator}`;
         }
-        
+
         const zuglangResult = decimalToZuglang(result);
-        
+
         return `${expression1} ${operator} ${expression2} = ${zuglangResult} (${num1} ${operator} ${num2} = ${result} in decimal)`;
-        
+
     } catch (error) {
         return `Error: ${error.message}`;
     }
