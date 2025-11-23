@@ -1,7 +1,7 @@
 import { app } from '@azure/functions';
 
 // Get the base URL from environment variable or construct it
-const BASE_URL = process.env.FUNCTION_BASE_URL || 'https://your-function-app.azurewebsites.net/api';
+const BASE_URL = process.env.FUNCTION_BASE_URL;
 
 app.http('zulang_tool_rooter', {
     methods: ['GET'],
