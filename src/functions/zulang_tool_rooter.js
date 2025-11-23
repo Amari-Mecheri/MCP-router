@@ -177,7 +177,8 @@ function translateZuglang(expression) {
         "xelgo kravid timzor pluven": "Hello guys, what's up?",
         "morgat flixu": "Good morning",
         "zynthar polken": "Thank you",
-        "brevix qaltor myx": "How are you?"
+        "brevix qaltor myx": "How are you?",
+        "zyu ogu agrir": "This is a test"
     };
 
     // Normalize the input (trim whitespace, lowercase)
