@@ -1,78 +1,64 @@
 import { app } from '@azure/functions';
 
 // Get the base URL from environment variable or construct it
-const BASE_URL = process.env.FUNCTION_BASE_URL;
+const BASE_URL = process.env.FUNCTION_BASE_URL || 'https://your-function-app.azurewebsites.net/api';
 
 app.http('zulang_tool_rooter', {
-    methods: ['GET', 'POST'],
+    methods: ['GET'],
     authLevel: 'anonymous',
     handler: async (request, context) => {
         context.log(`Http function processed request for url "${request.url}"`);
 
         try {
-            // GET request - return available tools with their URLs
-            if (request.method === 'GET') {
-                return {
-                    status: 200,
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        tools: [
-                            {
-                                name: 'zuglang_translator',
-                                description: 'Translates a Zuglang expression to natural language',
-                                url: `${BASE_URL}/zuglang_translator`,
-                                method: 'POST',
-                                parameters: {
-                                    expression: {
-                                        type: 'string',
-                                        description: 'The Zuglang expression to translate',
-                                        required: true
-                                    }
-                                }
-                            },
-                            {
-                                name: 'zuglang_calculator',
-                                description: 'Performs a calculation on two Zuglang expressions',
-                                url: `${BASE_URL}/zuglang_calculator`,
-                                method: 'POST',
-                                parameters: {
-                                    expression1: {
-                                        type: 'string',
-                                        description: 'The first Zuglang expression',
-                                        required: true
-                                    },
-                                    expression2: {
-                                        type: 'string',
-                                        description: 'The second Zuglang expression',
-                                        required: true
-                                    },
-                                    operator: {
-                                        type: 'string',
-                                        description: 'The operator to apply',
-                                        enum: ['+', '-', '*', '/'],
-                                        required: true
-                                    }
-                                }
-                            }
-                        ]
-                    })
-                };
-            }
-
-            // POST requests are not handled by router anymore
-            // Tools have their own endpoints
             return {
-                status: 405,
+                status: 200,
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    error: 'This is a router endpoint. Use GET to discover tools, then call the tool-specific URLs returned.'
+                    tools: [
+                        {
+                            name: 'zuglang_translator',
+                            description: 'Translates a Zuglang expression to natural language',
+                            url: `${BASE_URL}/zuglang_translator`,
+                            method: 'GET',
+                            parameters: {
+                                expression: {
+                                    type: 'string',
+                                    description: 'The Zuglang expression to translate (passed as query parameter)',
+                                    required: true
+                                }
+                            },
+                            example: `${BASE_URL}/zuglang_translator?expression=xelgo%20kravid%20timzor%20pluven%3F`
+                        },
+                        {
+                            name: 'zuglang_calculator',
+                            description: 'Performs a calculation on two Zuglang expressions',
+                            url: `${BASE_URL}/zuglang_calculator`,
+                            method: 'GET',
+                            parameters: {
+                                expression1: {
+                                    type: 'string',
+                                    description: 'The first Zuglang expression (query parameter)',
+                                    required: true
+                                },
+                                expression2: {
+                                    type: 'string',
+                                    description: 'The second Zuglang expression (query parameter)',
+                                    required: true
+                                },
+                                operator: {
+                                    type: 'string',
+                                    description: 'The operator to apply (query parameter)',
+                                    enum: ['+', '-', '*', '/'],
+                                    required: true
+                                }
+                            },
+                            example: `${BASE_URL}/zuglang_calculator?expression1=BC&expression2=CF&operator=%2B`
+                        }
+                    ]
                 })
             };
-
         } catch (error) {
             context.log.error('Error processing request:', error);
             return {
@@ -88,20 +74,22 @@ app.http('zulang_tool_rooter', {
     }
 });
 
-// Translator tool endpoint
+// Translator tool endpoint - now GET with query parameters
 app.http('zuglang_translator', {
-    methods: ['POST'],
+    methods: ['GET'],
     authLevel: 'anonymous',
     handler: async (request, context) => {
         try {
-            const body = await request.json();
-            const { expression } = body;
+            const expression = request.query.get('expression');
 
             if (!expression) {
                 return {
                     status: 400,
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ error: 'Missing required parameter: expression' })
+                    body: JSON.stringify({ 
+                        error: 'Missing required parameter: expression',
+                        usage: 'Call with ?expression=your_zuglang_text'
+                    })
                 };
             }
 
@@ -112,6 +100,7 @@ app.http('zuglang_translator', {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     tool: 'zuglang_translator',
+                    expression: expression,
                     result: result
                 })
             };
@@ -126,21 +115,23 @@ app.http('zuglang_translator', {
     }
 });
 
-// Calculator tool endpoint
+// Calculator tool endpoint - now GET with query parameters
 app.http('zuglang_calculator', {
-    methods: ['POST'],
+    methods: ['GET'],
     authLevel: 'anonymous',
     handler: async (request, context) => {
         try {
-            const body = await request.json();
-            const { expression1, expression2, operator } = body;
+            const expression1 = request.query.get('expression1');
+            const expression2 = request.query.get('expression2');
+            const operator = request.query.get('operator');
 
             if (!expression1 || !expression2 || !operator) {
                 return {
                     status: 400,
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
-                        error: 'Missing required parameters: expression1, expression2, operator' 
+                        error: 'Missing required parameters: expression1, expression2, operator',
+                        usage: 'Call with ?expression1=BC&expression2=CF&operator=%2B'
                     })
                 };
             }
@@ -162,6 +153,9 @@ app.http('zuglang_calculator', {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     tool: 'zuglang_calculator',
+                    expression1: expression1,
+                    expression2: expression2,
+                    operator: operator,
                     result: result
                 })
             };
@@ -176,7 +170,7 @@ app.http('zuglang_calculator', {
     }
 });
 
-// Implement your Zuglang translation logic here
+// Zuglang translation logic
 function translateZuglang(expression) {
     // Zuglang is a fictional constructed language
     // Example translations:
@@ -261,7 +255,7 @@ function calculateZuglang(expression1, expression2, operator) {
                 break;
             case '/':
                 if (num2 === 0) {
-                    return `Error: Zuglang has not defined Division by zero`;
+                    return `Error: Division by zero`;
                 }
                 result = Math.floor(num1 / num2); // Integer division
                 break;
